@@ -4,3 +4,4 @@ tensorboard
 opencv-python
 timm
 pytorch-ignite
+matplotlib
