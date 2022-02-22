@@ -1,0 +1,9 @@
+OPTIMIZER:
+    STEP_BATCHSIZE: 32
+    FORWARD_BATCHSIZE: 8
+    EPOCHS: 70
+    WARMUP_ITERATIONS: 1000
+    METHOD: "adam"
+    LR: 1.25e-4
+    WD: 0
+    SCHEDULER: "cosine"
