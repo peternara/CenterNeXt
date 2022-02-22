@@ -1,0 +1,11 @@
+MODEL:
+    BACKBONE: "resnet101"
+    USE_PRETRAINED_BACKBONE: True
+
+    INPUT_SIZE:
+        WIDTH: 512
+        HEIGHT: 512
+    
+    STRIDE: 8
+
+    CLASSES: ["aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
