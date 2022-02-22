@@ -47,16 +47,12 @@
 
 # Modified by: Yonghye Kwon (developer.0hye@gmail.com) 
 
-import argparse
 import glob
 import os
-import shutil
-import sys
 
 from .lib.BoundingBox import BoundingBox
 from .lib.BoundingBoxes import BoundingBoxes
 from .lib.Evaluator import *
-from .lib.utils import BBFormat
 
 from pathlib import Path
 
