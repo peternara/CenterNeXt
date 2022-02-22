@@ -1,0 +1,6 @@
+PyYAML
+tqdm
+tensorboard
+opencv-python
+timm
+pytorch-ignite
