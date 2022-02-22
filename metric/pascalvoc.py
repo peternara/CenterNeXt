@@ -63,7 +63,7 @@ def evaluate(gtFolder,
              detFormat, 
              detCoordType, 
              imgSize=(0, 0),
-             iouThreshold=.5
+             IOUThreshold=.5
              ):
     # Get groundtruth boxes
     allBoundingBoxes, allClasses = getBoundingBoxes(gtFolder,
@@ -86,15 +86,11 @@ def evaluate(gtFolder,
     validClasses = 0
 
     # Plot Precision x Recall curve
-    detections = evaluator.PlotPrecisionRecallCurve(
-        allBoundingBoxes,  # Object containing all bounding boxes (ground truths and detections)
-        IOUThreshold=iouThreshold,  # IOU threshold
-        method=MethodAveragePrecision.EveryPointInterpolation,
-        showAP=False,  # Show Average Precision in the title of the plot
-        showInterpolatedPrecision=False,  # Don't plot the interpolated precision curve
-        savePath=None,
-        showGraphic=False)
     
+    detections = evaluator.GetPascalVOCMetrics(allBoundingBoxes, # Object containing all bounding boxes (ground truths and detections)
+                                               IOUThreshold=IOUThreshold,  # IOU threshold
+                                               method=MethodAveragePrecision.EveryPointInterpolation)
+
     # each detection is a class
     for metricsPerClass in detections:
 
