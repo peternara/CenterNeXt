@@ -73,7 +73,7 @@ for (year, name) in image_sets:
             if vis: img = cv2.imread(img_path)
             label = read_gt_file_for_evaluation(label_path, keep_difficult)
             
-            eval_label_path = os.path.join("gt", Path(label_path).name)
+            eval_label_path = os.path.join("gt", Path(label_path).stem + ".txt")
             with open(eval_label_path, 'w') as f:
                 for bbox in label:
                     f.write(f"{CLASSES[bbox[0]]} {bbox[1]} {bbox[2]} {bbox[3]} {bbox[4]}\n")
@@ -82,4 +82,3 @@ for (year, name) in image_sets:
             if vis:
                 cv2.imshow("img", img)
                 cv2.waitKey(0)
-                
