@@ -29,7 +29,7 @@ class VOCDetection(object):
             keep_difficult (boolean): 
         """
         self.root = root
-        self.images_path = []
+        self.imgs_path = []
         self.labels_path = []
         self.labels = []
         
@@ -46,11 +46,11 @@ class VOCDetection(object):
                     label_path = os.path.join(rootpath, "Annotations", line + ".xml")
                     label = self.read_xml(label_path)
                     
-                    self.images_path.append(img_path)
+                    self.imgs_path.append(img_path)
                     self.labels_path.append(label_path)
                     self.labels.append(label)
         
-        assert len(self.images_path) == len(self.labels_path)
+        assert len(self.imgs_path) == len(self.labels_path)
         assert len(self.labels_path) == len(self.labels)
         
     def read_xml(self, label_path):
@@ -96,10 +96,10 @@ class VOCDetection(object):
         return label
     
     def __getitem__(self, idx):
-        img = cv2.imread(self.images_path[idx], cv2.IMREAD_COLOR)
+        img = cv2.imread(self.imgs_path[idx], cv2.IMREAD_COLOR)
         label = self.labels[idx].copy()
-        return img, label
+        return img, label, self.imgs_path[idx]
     
     def __len__(self): 
-        return len(self.images_path)
+        return len(self.imgs_path)
     
