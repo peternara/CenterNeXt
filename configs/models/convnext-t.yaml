@@ -7,5 +7,9 @@ MODEL:
         HEIGHT: 512
     
     STRIDE: 8
+    UPSAMPLING: "NEAREST"
+    COUPLED_LOCALIZATION_BRANCH: True
+    USE_MOSAIC: True
+    USE_MIXUP: True
 
     CLASSES: ["aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
