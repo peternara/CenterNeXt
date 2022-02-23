@@ -29,6 +29,8 @@ def parse_args():
 
 @torch.inference_mode()
 def evaluation(args, option, model=None, data_loader_val=None):
+    os.makedirs("pred", exist_ok=True)
+    
     # Load model
     if model is None:
         model = CenterNet(option).to(args.device)
