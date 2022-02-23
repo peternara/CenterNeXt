@@ -61,3 +61,8 @@ python train.py --model ./configs/models/your_model.yaml
 ```
 python eval.py --model ./configs/models/your_model.yaml --weigths /path/to/your_model.pth
 ```
+
+### Profiling
+```
+python profile.py --model ./configs/models/your_model.yaml
+```
