@@ -89,12 +89,14 @@ class CenterNet(nn.Module):
                                           pretrained=option["MODEL"]["USE_PRETRAINED_BACKBONE"],
                                           features_only=True)
         
+        self.stage_channels = self.backbone.feature_info.channels()
+        
         if option["MODEL"]["UPSAMPLING"] == "TRANSPOSED":     
-            self.upsample1 = Upsamling(512, 256, ksize=4, stride=2) # 32 -> 16
+            self.upsample1 = Upsamling(self.stage_channels[-1], 256, ksize=4, stride=2) # 32 -> 16
             self.upsample2 = Upsamling(256, 128, ksize=4, stride=2) # 16 -> 8
             self.upsample3 = Upsamling(128, 64, ksize=4, stride=2) if self.stride == 4 else nn.Identity()  #  8 -> 4
         elif option["MODEL"]["UPSAMPLING"] == "NEAREST":
-            self.upsample1 = NearestNeighborInterpolation(512, 256) # 32 -> 16
+            self.upsample1 = NearestNeighborInterpolation(self.stage_channels[-1], 256) # 32 -> 16
             self.upsample2 = NearestNeighborInterpolation(256, 128) # 16 -> 8
             self.upsample3 = NearestNeighborInterpolation(128, 64) if self.stride == 4 else nn.Identity()  #  8 -> 4
         
