@@ -23,8 +23,9 @@ def benchmark(model, batch_size=1, input_size=[512, 512], times=100, device='cud
         
     if profiler:
         with torch.autograd.profiler.profile(use_cuda=True, with_flops=True) as prof:
-            model(input)
-        print(prof)
+            for _ in range(0, times):
+                model(input)
+        print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10)) 
 
     start = torch.cuda.Event(enable_timing=True)
     end = torch.cuda.Event(enable_timing=True)
@@ -50,7 +51,7 @@ def profile(args, option):
     img_w = option["MODEL"]["INPUT_SIZE"]["WIDTH"]
     img_h = option["MODEL"]["INPUT_SIZE"]["HEIGHT"]
     
-    print(f'torch: {torch.__version__}, cuda: {torch.version.cuda}, cudnn: {torch.backends.cudnn.version()}')
+    print(f'gpu: {torch.cuda.get_device_name(0)}, torch: {torch.__version__}, cuda: {torch.version.cuda}, cudnn: {torch.backends.cudnn.version()}')
     print(f"#params (M): ", count_model_params(model)/1000000)
     print(f"Latency (ms): {benchmark(model, input_size=[img_h, img_w], times=100, profiler=args.profiler):.3f}")
     
