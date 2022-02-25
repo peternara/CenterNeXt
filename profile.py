@@ -26,8 +26,7 @@ def get_model_flops(model, batch_size=1, input_size=[512, 512], device='cuda'):
     input = torch.rand(batch_size, 3, input_size[0], input_size[1]).to(device)
 
     macs, params = thop.profile(model, inputs=(input,), verbose=False)
-    flops = macs * 2
-    return flops 
+    return macs
 
 @torch.inference_mode()
 def benchmark(model, batch_size=1, input_size=[512, 512], times=100, device='cuda', profiler=False):
@@ -38,7 +37,7 @@ def benchmark(model, batch_size=1, input_size=[512, 512], times=100, device='cud
     for _ in range(10): model(input) #gpu warmup
 
     if profiler:
-        with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA], record_shapes=True, profile_memory=True) as prof:
+        with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA], record_shapes=True, profile_memory=True, with_flops=True) as prof:
             model(input)
         print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
 
@@ -67,7 +66,7 @@ def profile(args, option):
     img_h = option["MODEL"]["INPUT_SIZE"]["HEIGHT"]
     
     print(f'gpu: {torch.cuda.get_device_name(0)}, torch: {torch.__version__}, cuda: {torch.version.cuda}, cudnn: {torch.backends.cudnn.version()}')
-    print(f"#params : {count_model_params(model)/1e6:.1f} (M), mem: {get_model_memory(model)/1e6:.1f} (Mb), flops: {get_model_flops(model, input_size=[img_h, img_w])/1e9:.1f} (G)" )
+    print(f"#params : {count_model_params(model)/1e6:.1f} (M), mem: {get_model_memory(model)/1e6:.1f} (Mb), macs: {get_model_flops(model, input_size=[img_h, img_w])/1e9:.1f} (G)" )
     print(f"Latency (ms): {benchmark(model, input_size=[img_h, img_w], times=100, profiler=args.profiler):.3f}")
     
 if __name__ == "__main__":
