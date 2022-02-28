@@ -60,3 +60,10 @@ python train.py --model ./configs/models/your_model.yaml
 ```
 python eval.py --model ./configs/models/your_model.yaml --weigths /path/to/your_model.pth
 ```
+
+## License
+
+This project is licensed under the terms of the **Attribution-NonCommercial 4.0 International license**.
+It is released for academic research only and is free to researchers from educational or research institutes for **non-commercial purposes**. 
+
+Please see the [LICENSE](./LICENSE) file for more information.
