@@ -9,7 +9,6 @@ The official implementation of "CenterNeXt: Revisiting CenterNet in 2022"
 | ResNet-18 | 512 x 512  | | [config]() |[model]() |
 | + Coupled head | 512 x 512  | | [config]() |[model]() |
 | + Detection on lower resolution | 512 x 512  | | [config]() |[model]() |
-| + Nearest neighbor interpolation | 512 x 512  | | [config]() |[model]() |
 | + Mosaic augmentation  | 512 x 512  | | [config]() |[model]() |
 | + Mixup augmentation | 512 x 512  | | [config]() |[model]() |
 | ResNet-50 | 512 x 512  | | [config]() |[model]() |
