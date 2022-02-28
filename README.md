@@ -2,7 +2,9 @@
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC_BY--NC_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
-The official implementation of ["CenterNeXt: Revisiting CenterNet in 2022"]()
+The official implementation of ["CenterNeXt: Revisiting CenterNet in 2022"]() 
+
+**It has not been published yet.**
 
 ## Results and Pre-trained Models
 
