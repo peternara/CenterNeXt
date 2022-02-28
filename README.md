@@ -6,14 +6,14 @@ The official implementation of "CenterNeXt: Revisiting CenterNet in 2022"
 ### VOC2007
 | backbone | resolution | mAP | model config | weights |
 |:---|:---:|:---:|:---:| :---:|
-| ResNet-18 | 512 x 512  | | [config]() |[model]() |
-| + Coupled head | 512 x 512  | | [config]() |[model]() |
-| + Detection on lower resolution | 512 x 512  | | [config]() |[model]() |
+| ResNet-18 | 512 x 512  | 74.81 | [config](./configs/models/r18_s4.yaml) |[model]() |
+| + Coupled head | 512 x 512  | 74.50 | [config](./configs/models/r18_s4_coupled.yaml) |[model]() |
+| + Detection on lower resolution | 512 x 512  |  73.57  | [config](/configs/models/r18_s8_coupled.yaml) |[model]() |
 | + Mosaic augmentation  | 512 x 512  | | [config]() |[model]() |
 | + Mixup augmentation | 512 x 512  | | [config]() |[model]() |
 | ResNet-50 | 512 x 512  | | [config]() |[model]() |
 | ResNet-101 | 512 x 512  | | [config]() |[model]() |
-| ConvNeXt-T | 512 x 512  | | [config]() |[model]() |
+| ConvNeXt-T | 512 x 512  | 83.30 | [config](/configs/models/convnext-t.yaml) |[model]() |
 
 ## Setup
 Create a new conda virtual environment
