@@ -62,23 +62,23 @@ def evaluation(args, option, model=None, data_loader_val=None):
             
             for i in range(len(batch_img)):
                 img_path = batch_data["img_path"][i]
-                pred_bboxes = batch_output[i].cpu().numpy()
                 
-                #create detection file for evaluation
+                #create a detection file for evaluation
                 detection_file = os.path.join("pred", Path(img_path).stem + ".txt")
+                
                 with open(detection_file, 'w') as f:
-                    # img = cv2.imread(img_path)
-                    for bbox in pred_bboxes:
-                        class_id = int(bbox[0])
-                        class_name = option["MODEL"]["CLASSES"][class_id]
-                        xmin, ymin, xmax, ymax, conf = bbox[1:]
+                    if len(batch_output[i]) == 0:
+                        continue
+                    pred_bboxes = batch_output[i].cpu().numpy()
                         
-                        f.write(f"{class_name} {conf} {xmin} {ymin} {xmax} {ymax}\n")
-                    #     if conf > .1:
-                    #         cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 255, 0), 5)
-                    # cv2.imshow("img", img)
-                    # cv2.waitKey(0)
-                    
+                    with open(detection_file, 'w') as f:
+                        for bbox in pred_bboxes:
+                            class_id = int(bbox[0])
+                            class_name = option["MODEL"]["CLASSES"][class_id]
+                            xmin, ymin, xmax, ymax, conf = bbox[1:]
+                            
+                            f.write(f"{class_name} {conf} {xmin} {ymin} {xmax} {ymax}\n")
+ 
     mAP = evaluate(gtFolder="./gt",
                    gtFormat="xyrb",
                    gtCoordType="abs",

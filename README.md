@@ -1,20 +1,22 @@
 # CenterNeXt
-The official implementation of "CenterNeXt: Revisiting CenterNet in 2022"
+
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC_BY--NC_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+
+The official implementation of ["CenterNeXt: Revisiting CenterNet in 2022"]()
 
 ## Results and Pre-trained Models
 
 ### VOC2007
-| backbone | resolution | mAP | model config | weights |
-|:---|:---:|:---:|:---:| :---:|
-| ResNet-18 | 512 x 512  | | [config]() |[model]() |
-| + Coupled head | 512 x 512  | | [config]() |[model]() |
-| + Detection on lower resolution | 512 x 512  | | [config]() |[model]() |
-| + Nearest neighbor interpolation | 512 x 512  | | [config]() |[model]() |
-| + Mosaic augmentation  | 512 x 512  | | [config]() |[model]() |
-| + Mixup augmentation | 512 x 512  | | [config]() |[model]() |
-| ResNet-50 | 512 x 512  | | [config]() |[model]() |
-| ResNet-101 | 512 x 512  | | [config]() |[model]() |
-| ConvNeXt-T | 512 x 512  | | [config]() |[model]() |
+| backbone | resolution | mAP | FPS(on Titan Xp)| FPS(on RTX 3090) | model config | weights |
+|:---|:---:|:---:|:---:| :---:|:---:|:---:|
+| ResNet-18 | 512 x 512  | 74.81 | | | [config](./configs/models/r18_s4.yaml) |[model]() |
+| + Coupled head | 512 x 512  | 74.50 | | | [config](./configs/models/r18_s4_coupled.yaml) |[model]() |
+| + Detection on lower resolution | 512 x 512  |  73.57  | | | [config](/configs/models/r18_s8_coupled.yaml) |[model]() |
+| + Mosaic augmentation  | 512 x 512  | | | | [config](/configs/models/r18_s8_coupled_mosaic.yaml) |[model]() |
+| + Mixup augmentation | 512 x 512  | | | | [config](/configs/models/r18_s8_coupled_mosaic_mixup.yaml) |[model]() |
+| ResNet-50 | 512 x 512  | | | | [config](/configs/models/r50.yaml) |[model]() |
+| ResNet-101 | 512 x 512  | | | | [config](/configs/models/r101.yaml) |[model]() |
+| ConvNeXt-T | 512 x 512  | 83.30 | | | [config](/configs/models/convnext-t.yaml) |[model]() |
 
 ## Setup
 Create a new conda virtual environment
@@ -66,3 +68,11 @@ python eval.py --model ./configs/models/your_model.yaml --weigths /path/to/your_
 ```
 python profile.py --model ./configs/models/your_model.yaml
 ```
+## License
+
+This project is licensed under the terms of the **Attribution-NonCommercial 4.0 International license**.
+It is released for academic research only and is free to researchers from educational or research institutes for **non-commercial purposes**. 
+
+Please see the [LICENSE](./LICENSE) file for more information.
+
+Please contact contentsrnd@markany.com or works@markany.com for business inquiries.
