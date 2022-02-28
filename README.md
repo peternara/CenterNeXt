@@ -1,5 +1,5 @@
 # CenterNeXt
-The official implementation of "CenterNeXt: Revisiting CenterNet in 2022"
+The official implementation of ["CenterNeXt: Revisiting CenterNet in 2022"]()
 
 ## Results and Pre-trained Models
 
