@@ -65,18 +65,6 @@ class Upsamling(nn.Module):
         x = torch.relu(self.bn2(self.up(x)))
         return x
 
-class NearestNeighborInterpolation(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super(NearestNeighborInterpolation, self).__init__()
-        self.conv = DeformableConv2d(in_channels, out_channels)
-        self.bn1 = nn.BatchNorm2d(out_channels)
-        
-        self.up = nn.Upsample(mode='nearest', scale_factor=2)
-    def forward(self, x):
-        x = torch.relu(self.bn1(self.conv(x)))
-        x = self.up(x)
-        return x
-
 class CenterNet(nn.Module):
     def __init__(self, option):
         super(CenterNet, self).__init__()
@@ -91,14 +79,9 @@ class CenterNet(nn.Module):
         
         self.stage_channels = self.backbone.feature_info.channels()
         
-        if option["MODEL"]["UPSAMPLING"] == "TRANSPOSED":     
-            self.upsample1 = Upsamling(self.stage_channels[-1], 256, ksize=4, stride=2) # 32 -> 16
-            self.upsample2 = Upsamling(256, 128, ksize=4, stride=2) # 16 -> 8
-            self.upsample3 = Upsamling(128, 64, ksize=4, stride=2) if self.stride == 4 else nn.Identity()  #  8 -> 4
-        elif option["MODEL"]["UPSAMPLING"] == "NEAREST":
-            self.upsample1 = NearestNeighborInterpolation(self.stage_channels[-1], 256) # 32 -> 16
-            self.upsample2 = NearestNeighborInterpolation(256, 128) # 16 -> 8
-            self.upsample3 = NearestNeighborInterpolation(128, 64) if self.stride == 4 else nn.Identity()  #  8 -> 4
+        self.upsample1 = Upsamling(self.stage_channels[-1], 256, ksize=4, stride=2) # 32 -> 16
+        self.upsample2 = Upsamling(256, 128, ksize=4, stride=2) # 16 -> 8
+        self.upsample3 = Upsamling(128, 64, ksize=4, stride=2) if self.stride == 4 else nn.Identity()  #  8 -> 4
         
         head_dim = 64 if self.stride == 4 else 128
 
