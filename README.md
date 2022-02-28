@@ -7,7 +7,7 @@ The official implementation of ["CenterNeXt: Revisiting CenterNet in 2022"]()
 ## Results and Pre-trained Models
 
 ### VOC2007
-| backbone | resolution | mAP | FPS(on Titan Xp)| FPS(on RTX 3090) | model config | weights |
+| backbone | resolution | mAP | FPS <br /> (on Titan Xp)| FPS <br /> (on RTX 3090) | model config | weights |
 |:---|:---:|:---:|:---:| :---:|:---:|:---:|
 | ResNet-18 | 512 x 512  | 74.81 | | | [config](./configs/models/r18_s4.yaml) |[model]() |
 | + Coupled head | 512 x 512  | 74.50 | | | [config](./configs/models/r18_s4_coupled.yaml) |[model]() |
