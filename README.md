@@ -9,16 +9,16 @@ The official implementation of ["CenterNeXt: Revisiting CenterNet in 2022"]()
 ## Results and Pre-trained Models
 
 ### VOC2007
-| backbone | resolution | mAP | FPS <br /> (on Titan Xp)| FPS <br /> (on RTX 3090) | model config | weights |
+| backbone | resolution | mAP | FPS(on Titan Xp)| FPS(on RTX 3090) | model config | weights |
 |:---|:---:|:---:|:---:| :---:|:---:|:---:|
-| ResNet-18 | 512 x 512  | 74.81 | | | [config](./configs/models/r18_s4.yaml) |[model]() |
+| ResNet-18 | 512 x 512 |  74.68 | | | [config](./configs/models/r18_s4.yaml) |[model]() |
 | + Coupled head | 512 x 512  | 74.50 | | | [config](./configs/models/r18_s4_coupled.yaml) |[model]() |
-| + Detection on lower resolution(stride=8) | 512 x 512  |  73.57  | | | [config](/configs/models/r18_s8_coupled.yaml) |[model]() |
-| + Mosaic augmentation  | 512 x 512  | | | | [config](/configs/models/r18_s8_coupled_mosaic.yaml) |[model]() |
-| + Mixup augmentation | 512 x 512  | | | | [config](/configs/models/r18_s8_coupled_mosaic_mixup.yaml) |[model]() |
-| ResNet-50 | 512 x 512  | | | | [config](/configs/models/r50.yaml) |[model]() |
-| ResNet-101 | 512 x 512  | | | | [config](/configs/models/r101.yaml) |[model]() |
-| ConvNeXt-T | 512 x 512  | 83.30 | | | [config](/configs/models/convnext-t.yaml) |[model]() |
+| + Detection on lower resolution | 512 x 512  | 73.66   | | | [config](/configs/models/r18_s8_coupled.yaml) |[model]() |
+| + Mosaic augmentation  | 512 x 512  | 73.84 | | | [config](/configs/models/r18_s8_coupled_mosaic.yaml) |[model]() |
+| + Mixup augmentation | 512 x 512  | 75.46 | | | [config](/configs/models/r18_s8_coupled_mosaic_mixup.yaml) |[model]() |
+| ResNet-50 | 512 x 512  | 79.85  | | | [config](/configs/models/r50.yaml) |[model]() |
+| ResNet-101 | 512 x 512  | 83.18  | | | [config](/configs/models/r101.yaml) |[model]() |
+| ConvNeXt-T | 512 x 512  | 83.59  | | | [config](/configs/models/convnext-t.yaml) |[model]() |
 
 ## Setup
 Create a new conda virtual environment
