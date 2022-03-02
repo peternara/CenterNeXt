@@ -66,7 +66,7 @@ def profile(args, option):
     img_h = option["MODEL"]["INPUT_SIZE"]["HEIGHT"]
     
     print(f'gpu: {torch.cuda.get_device_name(0)}, torch: {torch.__version__}, cuda: {torch.version.cuda}, cudnn: {torch.backends.cudnn.version()}')
-    print(f"#params : {count_model_params(model)/1e6:.1f} (M), mem: {get_model_memory(model)/1e6:.1f} (Mb), macs: {get_model_flops(model, input_size=[img_h, img_w])/1e9:.1f} (G)" )
+    print(f"#params : {count_model_params(model)/1e6:.1f} (M), mem: {get_model_memory(model)/1024/1024:.1f} (MB), macs: {get_model_flops(model, input_size=[img_h, img_w])/1e9:.1f} (G)" )
     print(f"Latency (ms): {benchmark(model, input_size=[img_h, img_w], times=100, profiler=args.profiler):.3f}")
     
 if __name__ == "__main__":
