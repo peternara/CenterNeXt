@@ -54,7 +54,8 @@ def benchmark(model, batch_size=1, input_size=[512, 512], times=100, device='cud
         avg_time += start.elapsed_time(end)
 
     avg_time /= times
-    return avg_time
+    fps = 1000 / avg_time
+    return avg_time, fps
     
 
 def profile(args, option):
@@ -67,7 +68,8 @@ def profile(args, option):
     
     print(f'gpu: {torch.cuda.get_device_name(0)}, torch: {torch.__version__}, cuda: {torch.version.cuda}, cudnn: {torch.backends.cudnn.version()}')
     print(f"#params : {count_model_params(model)/1e6:.1f} (M), mem: {get_model_memory(model)/1024/1024:.1f} (MB), macs: {get_model_flops(model, input_size=[img_h, img_w])/1e9:.1f} (G)" )
-    print(f"Latency (ms): {benchmark(model, input_size=[img_h, img_w], times=100, profiler=args.profiler):.3f}")
+    avg_time, fps = benchmark(model, input_size=[img_h, img_w], times=100, profiler=args.profiler)
+    print(f"Latency (ms): {avg_time:.3f}, FPS: {fps:.1f}")
     
 if __name__ == "__main__":
     args = parse_args()
