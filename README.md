@@ -11,14 +11,14 @@ The official implementation of ["CenterNeXt: Revisiting CenterNet in 2022"]()
 ### VOC2007
 | backbone | resolution | mAP | FPS(on Titan Xp)| FPS(on RTX 3090) | FLOPs<br>(G) | model config | weights |
 |:---|:---:|:---:|:---:| :---:|:---:|:---:|:---:|
-| ResNet-18 | 512 x 512 |  74.68 | | | 14.8 | [config](./configs/models/r18_s4.yaml) |[model]() |
-| + Coupled head | 512 x 512  | 74.50 | | | 14.2 | [config](./configs/models/r18_s4_coupled.yaml) |[model]() |
-| + Detection on lower resolution | 512 x 512  | 73.66 | | | 13.0 | [config](/configs/models/r18_s8_coupled.yaml) |[model]() |
-| + Mosaic augmentation  | 512 x 512  | 73.84 | | | 13.0 | [config](/configs/models/r18_s8_coupled_mosaic.yaml) |[model]() |
-| + Mixup augmentation | 512 x 512  | 75.46 | | | 13.0 | [config](/configs/models/r18_s8_coupled_mosaic_mixup.yaml) |[model]() |
-| ResNet-50 | 512 x 512  | 79.85  | | | 25.0 | [config](/configs/models/r50.yaml) |[model]() |
-| ResNet-101 | 512 x 512  | 83.18  | | | 44.5 | [config](/configs/models/r101.yaml) |[model]() |
-| ConvNeXt-T | 512 x 512  | 83.59  | | | 26.8 | [config](/configs/models/convnext-t.yaml) |[model]() |
+| ResNet-18 | 512 x 512 |  74.68 | 110 | | 14.8 | [config](./configs/models/r18_s4.yaml) |[model]() |
+| + Coupled head | 512 x 512  | 74.50 | 112 | | 14.2 | [config](./configs/models/r18_s4_coupled.yaml) |[model]() |
+| + Detection on lower resolution | 512 x 512 | 73.66 | 127 | | 13.0 | [config](/configs/models/r18_s8_coupled.yaml) |[model]() |
+| + Mosaic augmentation  | 512 x 512  | 73.84 | 127 | | 13.0 | [config](/configs/models/r18_s8_coupled_mosaic.yaml) |[model]() |
+| + Mixup augmentation | 512 x 512  | 75.46 | 127 | | 13.0 | [config](/configs/models/r18_s8_coupled_mosaic_mixup.yaml) |[model]() |
+| ResNet-50 | 512 x 512  | 79.85  | 65 | | 25.0 | [config](/configs/models/r50.yaml) |[model]() |
+| ResNet-101 | 512 x 512  | 83.18  | 39 | | 44.5 | [config](/configs/models/r101.yaml) |[model]() |
+| ConvNeXt-T | 512 x 512  | 83.59  | 43 | | 26.8 | [config](/configs/models/convnext-t.yaml) |[model]() |
 
 ## Setup
 Create a new conda virtual environment
