@@ -1,7 +1,8 @@
 from utils.seed import setup_seed
 from utils.parser import parse_yaml
 from utils.data.dataset import DetectionDataset, collate_fn
-from models.centernet import CenterNet
+import utils.ddp
+from models.centernet import CenterNet, compute_loss
 from eval import evaluation
 
 import os
@@ -26,6 +27,9 @@ def parse_args():
     parser.add_argument("--save-folder", default="./weights", type=str, help="Where you save weights")
     parser.add_argument('--device', default='cuda', help='device to use for training / testing')
     parser.add_argument("--seed", default=7777, type=int)
+
+    # distributed training parameters
+    parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
     return parser.parse_args()
 
 def get_lr(optimizer):
@@ -33,21 +37,42 @@ def get_lr(optimizer):
         return param_group['lr']
     
 def train(args, option):
+    utils.ddp.init_distributed_mode(args)
+    
+    print(args)
+
+    device = torch.device(args.device)
+    
+    # Fix the seed for reproducibility
+    seed = args.seed + utils.ddp.get_rank()
+    setup_seed(seed)
+
     # Load model
     model = CenterNet(option).to(args.device)
-        
+    model_without_ddp = model
+    if args.distributed:
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+        model_without_ddp = model.module
+    
     # Load dataset
     dataset_train = DetectionDataset(option, split="train", apply_augmentation=True)
     dataset_val = DetectionDataset(option, split="val")
     
+    if args.distributed:
+        sampler_train = torch.utils.data.DistributedSampler(
+                dataset_train, num_replicas=utils.ddp.get_world_size(), rank=utils.ddp.get_rank(), shuffle=True
+            )
+    else:
+        sampler_train = torch.utils.data.RandomSampler(dataset_train)
+        
     data_loader_train = torch.utils.data.DataLoader(dataset_train, 
                                                     option["OPTIMIZER"]["FORWARD_BATCHSIZE"],
                                                     num_workers=args.num_workers,
-                                                    shuffle=True,
+                                                    sampler=sampler_train,
                                                     pin_memory=True,
                                                     drop_last=True,
                                                     collate_fn=collate_fn)
-
+   
     data_loader_val = torch.utils.data.DataLoader(dataset_val, 
                                                   option["OPTIMIZER"]["FORWARD_BATCHSIZE"],
                                                   num_workers=args.num_workers,
@@ -57,7 +82,7 @@ def train(args, option):
                                                   collate_fn=collate_fn)
     
     # Load optimizer & lr scheduler
-    optimizer = optim.Adam(model.parameters(), 
+    optimizer = optim.Adam(model_without_ddp.parameters(), 
                             lr=option["OPTIMIZER"]["LR"],
                             weight_decay=option["OPTIMIZER"]["WD"])
     
@@ -92,15 +117,17 @@ def train(args, option):
         scaler.load_state_dict(checkpoint['scaler_state_dict'])
     
     for epoch in range(start_epoch, total_epoch + 1):
+        if args.distributed:
+            data_loader_train.sampler.set_epoch(epoch)
+            
         # Training
         model.train()
-        with tqdm(data_loader_train, unit="batch") as tbar:
+        with tqdm(data_loader_train, unit="batch", disable=not utils.ddp.is_main_process()) as tbar:
             for idx_batch, batch_data in enumerate(tbar):
                 # Update lr_scheduler
                 lr_scheduler(None)
                 
                 n_iter = idx_batch + (epoch - 1) * len(data_loader_train)
-                tbar.set_description(f"Epoch {epoch}/{total_epoch}")
                 
                 batch_img = batch_data["img"].to(args.device)
                 batch_label = batch_data["label"]
@@ -108,15 +135,18 @@ def train(args, option):
                 #Forward
                 with torch.cuda.amp.autocast():
                     batch_output = model(batch_img)
-                    loss, losses = model.compute_loss(batch_output, batch_label)
+                    loss, losses = compute_loss(batch_output, batch_label)
                 
                 #Plot
-                tbar.set_postfix(loss=loss.item())
-                logger.add_scalar('train/loss_offset_xy', losses[0].item(), n_iter)
-                logger.add_scalar('train/loss_wh', losses[1].item(), n_iter)
-                logger.add_scalar('train/loss_class_heatmap', losses[2].item(), n_iter)
-                logger.add_scalar('train/loss', loss.item(), n_iter)
-                logger.add_scalar('train/lr', get_lr(optimizer), n_iter)
+                if utils.ddp.is_main_process():
+                    tbar.set_description(f"Epoch {epoch}/{total_epoch}")
+                    tbar.set_postfix(loss=loss.item())
+
+                    logger.add_scalar('train/loss_offset_xy', losses[0].item(), n_iter)
+                    logger.add_scalar('train/loss_wh', losses[1].item(), n_iter)
+                    logger.add_scalar('train/loss_class_heatmap', losses[2].item(), n_iter)
+                    logger.add_scalar('train/loss', loss.item(), n_iter)
+                    logger.add_scalar('train/lr', get_lr(optimizer), n_iter)
 
                 #Backword
                 loss = loss / iters_to_accumulate
@@ -126,32 +156,32 @@ def train(args, option):
                     scaler.step(optimizer)
                     scaler.update()
                     optimizer.zero_grad()
-                
-        # Validation
-        model.eval()
-        mAP = evaluation(args, option, model, data_loader_val) # mAP
-        print(f"mAP: {mAP}%")
-        logger.add_scalar('val/mAP', mAP, epoch)
         
-        # Save weights
-        checkpoint = {
-        'epoch': epoch,# zero indexing
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict' : optimizer.state_dict(),
-        'lr_scheduler_state_dict' : lr_scheduler.state_dict(),
-        'scaler_state_dict' : scaler.state_dict(),
-        'mAP': mAP,
-        }
-        
-        if best_mAP < mAP:
-            best_mAP = mAP
-            torch.save(checkpoint, os.path.join(args.save_folder, 'best_mAP.pth'))
-        torch.save(checkpoint, os.path.join(args.save_folder, 'epoch_' + str(epoch) + '.pth'))       
+        if utils.ddp.is_main_process():
+            # Validation
+            model_without_ddp.eval()
+            mAP = evaluation(args, option, model_without_ddp, data_loader_val) # mAP
+            print(f"mAP: {mAP}%")
+            logger.add_scalar('val/mAP', mAP, epoch)
+            
+            # Save weights
+            checkpoint = {
+            'epoch': epoch,# zero indexing
+            'model_state_dict': model_without_ddp.state_dict(),
+            'optimizer_state_dict' : optimizer.state_dict(),
+            'lr_scheduler_state_dict' : lr_scheduler.state_dict(),
+            'scaler_state_dict' : scaler.state_dict(),
+            'mAP': mAP,
+            }
+            
+            if best_mAP < mAP:
+                best_mAP = mAP
+                torch.save(checkpoint, os.path.join(args.save_folder, 'best_mAP.pth'))
+            torch.save(checkpoint, os.path.join(args.save_folder, 'epoch_' + str(epoch) + '.pth'))       
 
 if __name__ == "__main__":
     args = parse_args()
     
-    setup_seed(args.seed)
     os.makedirs(args.save_folder, exist_ok=True)
     
     # Parse yaml files
