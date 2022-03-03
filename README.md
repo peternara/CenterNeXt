@@ -63,7 +63,7 @@ python train.py --model ./configs/models/your_model.yaml
 
 ### Evaluation
 ```
-python eval.py --model ./configs/models/your_model.yaml --weigths /path/to/your_model.pth
+python eval.py --model ./configs/models/your_model.yaml --weights /path/to/your_model.pth
 ```
 
 ### Profiling
