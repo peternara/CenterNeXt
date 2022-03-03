@@ -51,6 +51,7 @@ def train(args, option):
     model = CenterNet(option).to(args.device)
     model_without_ddp = model
     if args.distributed:
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
     
@@ -58,10 +59,18 @@ def train(args, option):
     dataset_train = DetectionDataset(option, split="train", apply_augmentation=True)
     dataset_val = DetectionDataset(option, split="val")
     
+    assert option["OPTIMIZER"]["STEP_BATCHSIZE"] >= option["OPTIMIZER"]["FORWARD_BATCHSIZE"]
+    assert option["OPTIMIZER"]["STEP_BATCHSIZE"] % option["OPTIMIZER"]["FORWARD_BATCHSIZE"] == 0
     if args.distributed:
         sampler_train = torch.utils.data.DistributedSampler(
                 dataset_train, num_replicas=utils.ddp.get_world_size(), rank=utils.ddp.get_rank(), shuffle=True
             )
+        
+        assert option["OPTIMIZER"]["STEP_BATCHSIZE"] % utils.ddp.get_world_size() == 0
+        assert option["OPTIMIZER"]["FORWARD_BATCHSIZE"] % utils.ddp.get_world_size() == 0
+        
+        option["OPTIMIZER"]["STEP_BATCHSIZE"] = option["OPTIMIZER"]["STEP_BATCHSIZE"] // utils.ddp.get_world_size()
+        option["OPTIMIZER"]["FORWARD_BATCHSIZE"] = option["OPTIMIZER"]["FORWARD_BATCHSIZE"] // utils.ddp.get_world_size()
     else:
         sampler_train = torch.utils.data.RandomSampler(dataset_train)
         
