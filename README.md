@@ -11,14 +11,14 @@ The official implementation of ["CenterNeXt: Revisiting CenterNet in 2022"]()
 ### VOC2007
 | backbone | resolution | mAP | FPS(on Titan Xp)| FPS(on RTX 3090) | FLOPs<br>(G) | model config | weights |
 |:---|:---:|:---:|:---:| :---:|:---:|:---:|:---:|
-| ResNet-18 | 512 x 512 |  74.68 | 110 | | 14.8 | [config](./configs/models/r18_s4.yaml) |[model]() |
-| + Coupled head | 512 x 512  | 74.50 | 112 | | 14.2 | [config](./configs/models/r18_s4_coupled.yaml) |[model]() |
-| + Detection on lower resolution | 512 x 512 | 73.66 | 127 | | 13.0 | [config](/configs/models/r18_s8_coupled.yaml) |[model]() |
-| + Mosaic augmentation  | 512 x 512  | 73.84 | 127 | | 13.0 | [config](/configs/models/r18_s8_coupled_mosaic.yaml) |[model]() |
-| + Mixup augmentation | 512 x 512  | 75.46 | 127 | | 13.0 | [config](/configs/models/r18_s8_coupled_mosaic_mixup.yaml) |[model]() |
-| ResNet-50 | 512 x 512  | 79.85  | 65 | | 25.0 | [config](/configs/models/r50.yaml) |[model]() |
-| ResNet-101 | 512 x 512  | 83.18  | 39 | | 44.5 | [config](/configs/models/r101.yaml) |[model]() |
-| ConvNeXt-T | 512 x 512  | 83.59  | 43 | | 26.8 | [config](/configs/models/convnext-t.yaml) |[model]() |
+| ResNet-18 | 512 x 512 |  74.92 | 110 | 164 | 14.8 | [config](./configs/models/r18_s4.yaml) |[model](https://github.com/MarkAny-Vision-AI/CenterNeXt/releases/download/v0.0.1/r18_s4_best_mAP.pth) |
+| + Coupled head | 512 x 512  | 74.61 | 112 | 167 | 14.2 | [config](./configs/models/r18_s4_coupled.yaml) |[model](https://github.com/MarkAny-Vision-AI/CenterNeXt/releases/download/v0.0.1/r18_s4_coupled_best_mAP.pth) |
+| + Detection on lower resolution | 512 x 512 | 74.36 | 127 | 191 | 13.0 | [config](/configs/models/r18_s8_coupled.yaml) |[model](https://github.com/MarkAny-Vision-AI/CenterNeXt/releases/download/v0.0.1/r18_s8_coupled_best_mAP.pth) |
+| + Mosaic augmentation  | 512 x 512  | 74.20 | 127 | 191 | 13.0 | [config](/configs/models/r18_s8_coupled_mosaic.yaml) |[model](https://github.com/MarkAny-Vision-AI/CenterNeXt/releases/download/v0.0.1/r18_s8_coupled_mosaic_best_mAP.pth) |
+| + Mixup augmentation | 512 x 512  | 75.84 | 127 | 191 | 13.0 | [config](/configs/models/r18_s8_coupled_mosaic_mixup.yaml) |[model](https://github.com/MarkAny-Vision-AI/CenterNeXt/releases/download/v0.0.1/r18_s8_coupled_mosaic_mixup_best_mAP.pth) |
+| ResNet-50 | 512 x 512  | 80.46  | 65 | 104 | 25.0 | [config](/configs/models/r50.yaml) |[model](https://github.com/MarkAny-Vision-AI/CenterNeXt/releases/download/v0.0.1/r50_best_mAP.pth) |
+| ResNet-101 | 512 x 512  | 83.00  | 39 | 60 | 44.5 | [config](/configs/models/r101.yaml) |[model](https://github.com/MarkAny-Vision-AI/CenterNeXt/releases/download/v0.0.1/r101_best_mAP.pth) |
+| ConvNeXt-T | 512 x 512  | 83.57  | 43 | 87 | 26.8 | [config](/configs/models/convnext-t.yaml) |[model](https://github.com/MarkAny-Vision-AI/CenterNeXt/releases/download/v0.0.1/convnext-t_best_mAP.pth) |
 
 ## Setup
 Create a new conda virtual environment
