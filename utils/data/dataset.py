@@ -1,4 +1,5 @@
 from . import voc0712
+from . import coco
 from . import transforms
 
 import cv2
@@ -14,9 +15,13 @@ class DetectionDataset(Dataset):  # for training/testing
         
         assert split == "train" or split == "val"
         
-        self.dataset = voc0712.VOCDetection(option["DATASET"]["ROOT"], 
-                                            [("2007", "trainval"), ("2012", "trainval")] if split == "train" else [("2007", "test")], 
-                                            keep_difficult=False)
+        if option["DATASET"]["NAME"] == "VOC0712":
+            self.dataset = voc0712.VOCDetection(option["DATASET"]["ROOT"], 
+                                                [("2007", "trainval"), ("2012", "trainval")] if split == "train" else [("2007", "test")], 
+                                                keep_difficult=False)
+        elif option["DATASET"]["NAME"] == "COCO":
+            self.dataset = coco.COCODetection(option["DATASET"]["ROOT"],
+                                              "train2017" if split == "train" else "val2017")
         
         self.num_classes = len(option["MODEL"]["CLASSES"])
         
