@@ -6,3 +6,4 @@ timm
 pytorch-ignite
 matplotlib
 thop
+pycocotools
