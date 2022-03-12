@@ -4,35 +4,35 @@ import numpy as np
 import os
 from pycocotools.coco import COCO
 
-PAPER_91CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane',
-'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
-'empty', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
-'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'empty',
-'backpack', 'umbrella', 'empty', 'empty', 'handbag', 'tie', 'suitcase',
-'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 
-'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle',
-'empty', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana',
-'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut',
-'cake', 'chair', 'couch', 'potted plant', 'bed', 'empty', 'dining table', 'empty',
-'empty', 'toilet', 'empty', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 
-'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'empty', 'book', 'clock', 'vase',
-'scissors', 'teddy bear', 'hair drier', 'toothbrush', 'empty')
+PAPER_91CLASSES = ("person", "bicycle", "car", "motorcycle", "airplane",
+"bus", "train", "truck", "boat", "traffic light", "fire hydrant",
+"empty", "stop sign", "parking meter", "bench", "bird", "cat", "dog",
+"horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "empty",
+"backpack", "umbrella", "empty", "empty", "handbag", "tie", "suitcase",
+"frisbee", "skis", "snowboard", "sports ball", "kite", "baseball bat", 
+"baseball glove", "skateboard", "surfboard", "tennis racket", "bottle",
+"empty", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana",
+"apple", "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut",
+"cake", "chair", "couch", "potted plant", "bed", "empty", "dining table", "empty",
+"empty", "toilet", "empty", "tv", "laptop", "mouse", "remote", "keyboard", "cell phone", 
+"microwave", "oven", "toaster", "sink", "refrigerator", "empty", "book", "clock", "vase",
+"scissors", "teddy bear", "hair drier", "toothbrush", "empty")
 
-CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-           'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
-           'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
-           'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra',
-           'giraffe', 'backpack', 'umbrella', 'handbag', 'tie',
-           'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-           'kite', 'baseball bat', 'baseball glove', 'skateboard',
-           'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup',
-           'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
-           'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-           'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed',
-           'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote',
-           'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink',
-           'refrigerator', 'book', 'clock', 'vase', 'scissors',
-           'teddy bear', 'hair drier', 'toothbrush') # https://tech.amikelive.com/node-718/what-object-categories-labels-are-in-coco-dataset/
+CLASSES = ("person", "bicycle", "car", "motorcycle", "airplane", "bus",
+           "train", "truck", "boat", "traffic light", "fire hydrant",
+           "stop sign", "parking meter", "bench", "bird", "cat", "dog",
+           "horse", "sheep", "cow", "elephant", "bear", "zebra",
+           "giraffe", "backpack", "umbrella", "handbag", "tie",
+           "suitcase", "frisbee", "skis", "snowboard", "sports ball",
+           "kite", "baseball bat", "baseball glove", "skateboard",
+           "surfboard", "tennis racket", "bottle", "wine glass", "cup",
+           "fork", "knife", "spoon", "bowl", "banana", "apple",
+           "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza",
+           "donut", "cake", "chair", "couch", "potted plant", "bed",
+           "dining table", "toilet", "tv", "laptop", "mouse", "remote",
+           "keyboard", "cell phone", "microwave", "oven", "toaster", "sink",
+           "refrigerator", "book", "clock", "vase", "scissors",
+           "teddy bear", "hair drier", "toothbrush") # https://tech.amikelive.com/node-718/what-object-categories-labels-are-in-coco-dataset/
 
 RELEASED_80CLASSES = CLASSES
 
@@ -44,28 +44,30 @@ class COCODetection(object):
         self.root = root
         self.images_path = []
         self.labels = []
-    
         self.coco = COCO(os.path.join(root, "annotations", "instances_" + image_set + ".json"))
         self.image_set = image_set
-        
-        ids = list(self.coco.imgToAnns.keys())
-        for id in ids:
+        self.ids = list(self.coco.imgToAnns.keys())
+        for id in self.ids:
             image_path, label = self.read_coco_data(id)
             self.images_path.append(image_path)
             self.labels.append(label)
         
     def read_coco_data(self, id):
         image_info = self.coco.loadImgs(id)[0]
-        image_path = os.path.join(self.root, self.image_set, image_info['file_name'])
+        image_path = os.path.join(self.root, self.image_set, image_info["file_name"])
         
-        img_h, img_w = image_info['height'], image_info['width']
+        img_h, img_w = image_info["height"], image_info["width"]
         target = self.coco.imgToAnns[id]
 
         label = []
         for obj in target:
-            if 'bbox' in obj:
-                bbox = obj['bbox'] #xywh, xy is top left point
-                class_name = PAPER_91CLASSES[obj['category_id']-1]# obj['category_id'] 1-based indexing
+            
+            if "iscrowd" in obj and obj["iscrowd"] == 1:
+                continue
+
+            if "bbox" in obj:
+                bbox = obj["bbox"] #xywh, xy is top left point
+                class_name = PAPER_91CLASSES[obj["category_id"]-1]# obj["category_id"] 1-based indexing
                 class_idx = RELEASED_80CLASSES.index(class_name)
 
                 bbox_cx = (bbox[0] + bbox[2] / 2.) / img_w
