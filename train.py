@@ -3,7 +3,7 @@ from utils.parser import parse_yaml
 from utils.data.dataset import DetectionDataset, collate_fn
 import utils.ddp
 from models.centernet import CenterNet, compute_loss
-from eval import evaluation
+from eval import evaluation_on_voc, evaluation_on_coco
 
 import os
 import argparse
@@ -114,7 +114,7 @@ def train(args, option):
     iters_to_accumulate = max(round(option["OPTIMIZER"]["STEP_BATCHSIZE"]/option["OPTIMIZER"]["FORWARD_BATCHSIZE"]), 1)
 
     best_mAP = 0.
-    
+
     # Load Pretrained Weights
     if os.path.isfile(args.weights):
         checkpoint = torch.load(args.weights)
@@ -169,7 +169,12 @@ def train(args, option):
         if utils.ddp.is_main_process():
             # Validation
             model_without_ddp.eval()
-            mAP = evaluation(args, option, model_without_ddp, data_loader_val) # mAP
+            
+            # SHOULD I STUDY DESIGN PATTERN?
+            if collated_option["DATASET"]["NAME"] == "VOC0712":
+                mAP = evaluation_on_voc(args, option, model_without_ddp, data_loader_val)
+            elif collated_option["DATASET"]["NAME"] == "COCO":
+                mAP = evaluation_on_coco(args, option, model_without_ddp, data_loader_val)
             print(f"mAP: {mAP}%")
             logger.add_scalar('val/mAP', mAP, epoch)
             

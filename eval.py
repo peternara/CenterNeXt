@@ -1,7 +1,7 @@
-from utils.seed import setup_seed
 from utils.parser import parse_yaml
 from utils.data.dataset import DetectionDataset, collate_fn
-from models.centernet import CenterNet, align_bboxes
+from utils.data.coco import PAPER_91CLASSES
+from models.centernet import CenterNet
 
 import os
 import numpy as np
@@ -13,6 +13,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 from metric.pascalvoc import evaluate
+from pycocotools.cocoeval import COCOeval
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -28,7 +29,7 @@ def parse_args():
     return parser.parse_args()
 
 @torch.inference_mode()
-def evaluation(args, option, model=None, data_loader_val=None):
+def evaluation_on_voc(args, option, model=None, data_loader_val=None):
     os.makedirs("pred", exist_ok=True)
     
     # Load model
@@ -87,15 +88,79 @@ def evaluation(args, option, model=None, data_loader_val=None):
                    detCoordType="abs")
     
     return mAP
+
+@torch.inference_mode()
+def evaluation_on_coco(args, option, model=None, data_loader_val=None):
+    # Load model
+    if model is None:
+        model = CenterNet(option).to(args.device)
+        if os.path.isfile(args.weights):
+            checkpoint = torch.load(args.weights)
+            model.load_state_dict(checkpoint['model_state_dict'])
     
+    # Load dataset
+    if data_loader_val is None:
+        dataset_val = DetectionDataset(option, split="val")
+
+        data_loader_val = torch.utils.data.DataLoader(dataset_val, 
+                                                    option["OPTIMIZER"]["FORWARD_BATCHSIZE"] if "OPTIMIZER" in option else args.batch_size,
+                                                    num_workers=args.num_workers,
+                                                    shuffle=False,
+                                                    pin_memory=False,
+                                                    drop_last=False,
+                                                    collate_fn=collate_fn)
+    coco_dt_np = []
+    coco_idx = 0
+    model.eval()
+    with tqdm(data_loader_val, unit="batch") as tbar:
+        for batch_data in tbar:
+            batch_img = batch_data["img"].to(args.device)
+            batch_org_img_shape = batch_data["org_img_shape"]
+            batch_padded_ltrb = batch_data["padded_ltrb"]
+            
+            batch_output = model(batch_img)
+            batch_output = model.post_processing(batch_output, batch_org_img_shape, batch_padded_ltrb, confidence_threshold=0)
+            
+            for i in range(len(batch_img)):
+                image_id = data_loader_val.dataset.dataset.ids[coco_idx]
+                coco_idx += 1
+                
+                if len(batch_output[i]) == 0:
+                        continue
+                pred_bboxes = batch_output[i].cpu().numpy()
+                for bbox in pred_bboxes:
+                    class_id = int(bbox[0])
+                    class_name = option["MODEL"]["CLASSES"][class_id]
+                    aligned_class_id = PAPER_91CLASSES.index(class_name) + 1
+                    
+                    xmin, ymin, xmax, ymax, conf = bbox[1:]
+                    w = xmax - xmin
+                    h = ymax - ymin
+                    
+                    coco_dt_np.append(np.array([image_id, xmin, ymin, w, h, conf, aligned_class_id]).reshape(-1, 7))
+    coco_dt_np = np.concatenate(coco_dt_np, axis=0)
+    
+    cocoGt = data_loader_val.dataset.dataset.coco
+    cocoDt = cocoGt.loadRes(coco_dt_np)
+    cocoEval = COCOeval(cocoGt, cocoDt, iouType="bbox")
+    cocoEval.evaluate()
+    cocoEval.accumulate()
+    cocoEval.summarize()
+    
+    mAP = cocoEval.stats[0] * 100.
+    return mAP
+
+
 if __name__ == "__main__":
     args = parse_args()
-    os.makedirs("pred", exist_ok=True)
-    
+
     # Parse yaml files
     dataset_option = parse_yaml(args.dataset)
     model_option = parse_yaml(args.model)
     collated_option = {**dataset_option, **model_option}
     
-    mAP = evaluation(args, collated_option)
+    if collated_option["DATASET"]["NAME"] == "VOC0712":
+        mAP = evaluation_on_voc(args, collated_option)
+    elif collated_option["DATASET"]["NAME"] == "COCO":
+        mAP = evaluation_on_coco(args, collated_option)
     print(f"mAP: {mAP}%")
