@@ -145,6 +145,7 @@ def train(args, option):
                 with torch.cuda.amp.autocast():
                     batch_output = model(batch_img)
                     loss, losses = compute_loss(batch_output, batch_label)
+                    loss = loss / iters_to_accumulate
                 
                 #Plot
                 if utils.ddp.is_main_process():
@@ -154,11 +155,11 @@ def train(args, option):
                     logger.add_scalar('train/loss_offset_xy', losses[0].item(), n_iter)
                     logger.add_scalar('train/loss_wh', losses[1].item(), n_iter)
                     logger.add_scalar('train/loss_class_heatmap', losses[2].item(), n_iter)
+                    logger.add_scalar('train/loss_giou', losses[3].item(), n_iter)
                     logger.add_scalar('train/loss', loss.item(), n_iter)
                     logger.add_scalar('train/lr', get_lr(optimizer), n_iter)
 
-                #Backword
-                loss = loss / iters_to_accumulate
+                #Backward
                 scaler.scale(loss).backward()
 
                 if (n_iter + 1) % iters_to_accumulate == 0:
