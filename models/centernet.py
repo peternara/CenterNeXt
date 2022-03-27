@@ -140,40 +140,42 @@ class CenterNet(nn.Module):
         self.img_h, self.img_w = x.shape[2:]
 
         out = self.encode(x)
+        out[:, :2] = torch.sigmoid(out[:, :2])
+        out[:, 2:4] = torch.exp(out[:, 2:4])
         
         if self.training:
             return out
-        else:
-            out_h, out_w = out.shape[2:]
-            device = out.device
-            
-            grid_y = torch.arange(out_h, dtype=out.dtype, device=device).view(1, out_h, 1).repeat(1, 1, out_w)
-            grid_x = torch.arange(out_w, dtype=out.dtype, device=device).view(1, 1, out_w).repeat(1, out_h, 1)
-            
-            # localization
-            bboxes_cx = (self.stride * (grid_x + out[:, 0]).flatten(start_dim=1))/self.img_w
-            bboxes_cy = (self.stride * (grid_y + out[:, 1]).flatten(start_dim=1))/self.img_h
-            
-            bboxes_w = (self.stride * out[:, 2].flatten(start_dim=1))/self.img_w
-            bboxes_h = (self.stride * out[:, 3].flatten(start_dim=1))/self.img_h
-            
-            bboxes_xmin = bboxes_cx - bboxes_w/2
-            bboxes_ymin = bboxes_cy - bboxes_h/2
-            
-            bboxes_xmax = bboxes_cx + bboxes_w/2
-            bboxes_ymax = bboxes_cy + bboxes_h/2
-            
-            class_heatmap = torch.sigmoid(out[:, 4:])# [B, 20, H, W]
-            class_heatmap = self.nms(class_heatmap).flatten(start_dim=2).transpose(1, 2) # [B, 20, H*W] -> # [B, H*W, 20]
-            class_heatmap, class_idx = torch.max(class_heatmap, dim=2) # [B, H*W]
-            class_idx = class_idx.to(dtype=out.dtype)
-            
-            _, topk_inds = torch.topk(class_heatmap, k=self.max_num_dets, dim=1)
-            
-            out = [torch.gather(x, dim=1, index=topk_inds) 
-                   for x in [class_idx, bboxes_xmin, bboxes_ymin, bboxes_xmax, bboxes_ymax, class_heatmap]]
-            out = torch.stack(out, dim=2) # [B, self.max_num_dets, 6]
-            return out
+        
+        out_h, out_w = out.shape[2:]
+        device = out.device
+        
+        grid_y = torch.arange(out_h, dtype=out.dtype, device=device).view(1, out_h, 1).repeat(1, 1, out_w)
+        grid_x = torch.arange(out_w, dtype=out.dtype, device=device).view(1, 1, out_w).repeat(1, out_h, 1)
+        
+        # localization
+        bboxes_cx = (self.stride * (grid_x + out[:, 0]).flatten(start_dim=1))/self.img_w
+        bboxes_cy = (self.stride * (grid_y + out[:, 1]).flatten(start_dim=1))/self.img_h
+        
+        bboxes_w = (self.stride * out[:, 2].flatten(start_dim=1))/self.img_w
+        bboxes_h = (self.stride * out[:, 3].flatten(start_dim=1))/self.img_h
+        
+        bboxes_xmin = bboxes_cx - bboxes_w/2
+        bboxes_ymin = bboxes_cy - bboxes_h/2
+        
+        bboxes_xmax = bboxes_cx + bboxes_w/2
+        bboxes_ymax = bboxes_cy + bboxes_h/2
+        
+        class_heatmap = torch.sigmoid(out[:, 4:])# [B, 20, H, W]
+        class_heatmap = self.nms(class_heatmap).flatten(start_dim=2).transpose(1, 2) # [B, 20, H*W] -> # [B, H*W, 20]
+        class_heatmap, class_idx = torch.max(class_heatmap, dim=2) # [B, H*W]
+        class_idx = class_idx.to(dtype=out.dtype)
+        
+        _, topk_inds = torch.topk(class_heatmap, k=self.max_num_dets, dim=1)
+        
+        out = [torch.gather(x, dim=1, index=topk_inds) 
+                for x in [class_idx, bboxes_xmin, bboxes_ymin, bboxes_xmax, bboxes_ymax, class_heatmap]]
+        out = torch.stack(out, dim=2) # [B, self.max_num_dets, 6]
+        return out
     
     def nms(self, class_probability:Tensor) -> Tensor:
         mask = torch.eq(class_probability, self.max_pool(class_probability)).to(class_probability.dtype)
@@ -201,9 +203,10 @@ class CenterNet(nn.Module):
                 
                 filtered_batch_bboxes.append(filtered_bboxes)
             return filtered_batch_bboxes
-   
+
 def compute_loss(batch_pred, batch_label):
-    batch_size = batch_pred.shape[0]
+    batch_size, _, batch_pred_h, batch_pred_w = batch_pred.shape
+    num_classes = batch_label["classes_gaussian_heatmap"].shape[1]
     dtype = batch_pred.dtype
     device = batch_pred.device
     
@@ -226,7 +229,21 @@ def compute_loss(batch_pred, batch_label):
     batch_loss_h = loss_wh_function(batch_pred[:, 3], batch_label["bboxes_regression"][:, 3]) * batch_label["foreground"]/batch_size
 
     batch_loss_class_heatmap = focal_loss(batch_pred[:, 4:], batch_label["classes_gaussian_heatmap"])/batch_size
+ 
+    flatten_batch_label_foreground = batch_label["foreground"].flatten(1)
+    batch_pred_localization = batch_pred[:, :4].flatten(2).transpose(1, 2)
+    batch_pred_localization = batch_pred_localization[flatten_batch_label_foreground == 1]
+    batch_pred_localization = batch_pred_localization.to(torch.float32)
+    
+    flatten_batch_label_bboxes_regression = batch_label["bboxes_regression"].flatten(2).transpose(1, 2)
+    flatten_batch_label_bboxes_regression = flatten_batch_label_bboxes_regression[flatten_batch_label_foreground == 1]
+    flatten_batch_label_bboxes_regression = flatten_batch_label_bboxes_regression.to(torch.float32)
+    
+    batch_pred_localization = torchvision.ops.box_convert(batch_pred_localization, 'cxcywh', 'xyxy').to(torch.float32)
+    flatten_batch_label_bboxes_regression = torchvision.ops.box_convert(flatten_batch_label_bboxes_regression, 'cxcywh', 'xyxy').to(torch.float32)
 
+    giou_loss = torchvision.ops.generalized_box_iou_loss(batch_pred_localization, flatten_batch_label_bboxes_regression, reduction='mean')
+    
     batch_loss_offset_x = batch_loss_offset_x.flatten(1).sum(1)
     batch_loss_offset_y = batch_loss_offset_y.flatten(1).sum(1)
     batch_loss_w = batch_loss_w.flatten(1).sum(1)
@@ -245,8 +262,8 @@ def compute_loss(batch_pred, batch_label):
     batch_loss_offset_xy = torch.sum(batch_loss_offset_x + batch_loss_offset_y)/2.
     batch_loss_wh = 0.1 * torch.sum(batch_loss_w + batch_loss_h)/2.
     batch_loss_class_heatmap = torch.sum(batch_loss_class_heatmap)
-    loss = batch_loss_offset_xy + batch_loss_wh + batch_loss_class_heatmap
-    return loss, [batch_loss_offset_xy, batch_loss_wh, batch_loss_class_heatmap]
+    loss = giou_loss + batch_loss_class_heatmap
+    return loss, [batch_loss_offset_xy, batch_loss_wh, batch_loss_class_heatmap, giou_loss]
 
 #Read Training-Time-Friendly Network for Real-Time Object Detection paper for more details
 def focal_loss(pred, gaussian_kernel, alpha=2., beta=4.):
@@ -266,4 +283,3 @@ def focal_loss(pred, gaussian_kernel, alpha=2., beta=4.):
         loss[negative_mask] *= ((1. - gaussian_kernel[negative_mask]) ** beta) * (pred[negative_mask].sigmoid() ** alpha)
         
     return loss
-
