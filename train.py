@@ -157,7 +157,7 @@ def train(args, option):
                     logger.add_scalar('train/loss', loss.item(), n_iter)
                     logger.add_scalar('train/lr', get_lr(optimizer), n_iter)
 
-                #Backword
+                #Backward
                 loss = loss / iters_to_accumulate
                 scaler.scale(loss).backward()
 
