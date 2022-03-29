@@ -395,6 +395,101 @@ def cutout(img, max_n_holes=5):
     img[mask] = 127
     return img
 
+def yolov5_random_perspective(img, bboxes_cxcywh, bboxes_class, degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,
+                       border=(0, 0)):
+    # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(0.1, 0.1), scale=(0.9, 1.1), shear=(-10, 10))
+    
+    org_img = img.copy()
+    org_bboxes_cxcywh = bboxes_cxcywh.copy()
+    org_bboxes_class = bboxes_class.copy()
+
+    height = img.shape[0] + border[0] * 2  # shape(h,w,c)
+    width = img.shape[1] + border[1] * 2
+
+    # Center
+    C = np.eye(3)
+    C[0, 2] = -img.shape[1] / 2  # x translation (pixels)
+    C[1, 2] = -img.shape[0] / 2  # y translation (pixels)
+
+    # Perspective
+    P = np.eye(3)
+    P[2, 0] = random.uniform(-perspective, perspective)  # x perspective (about y)
+    P[2, 1] = random.uniform(-perspective, perspective)  # y perspective (about x)
+
+    # Rotation and Scale
+    R = np.eye(3)
+    a = random.uniform(-degrees, degrees)
+    # a += random.choice([-180, -90, 0, 90])  # add 90deg rotations to small rotations
+    s = random.uniform(1 - scale, 1 + scale)
+    # s = 2 ** random.uniform(-scale, scale)
+    R[:2] = cv2.getRotationMatrix2D(angle=a, center=(0, 0), scale=s)
+
+    # Shear
+    S = np.eye(3)
+    S[0, 1] = math.tan(random.uniform(-shear, shear) * math.pi / 180)  # x shear (deg)
+    S[1, 0] = math.tan(random.uniform(-shear, shear) * math.pi / 180)  # y shear (deg)
+
+    # Translation
+    T = np.eye(3)
+    T[0, 2] = random.uniform(0.5 - translate, 0.5 + translate) * width  # x translation (pixels)
+    T[1, 2] = random.uniform(0.5 - translate, 0.5 + translate) * height  # y translation (pixels)
+
+    # Combined rotation matrix
+    M = T @ S @ R @ P @ C  # order of operations (right to left) is IMPORTANT
+    if (border[0] != 0) or (border[1] != 0) or (M != np.eye(3)).any():  # image changed
+        if perspective:
+            img = cv2.warpPerspective(img, M, dsize=(width, height), borderValue=(127, 127, 127))
+        else:  # affine
+            img = cv2.warpAffine(img, M[:2], dsize=(width, height), borderValue=(127, 127, 127))
+            
+    # Transform label coordinates
+    n = len(bboxes_cxcywh)
+    if n:
+        bboxes_xyxy = cxcywh2xyxy(bboxes_cxcywh)
+        bboxes_xyxy[:, [0, 2]] *= width
+        bboxes_xyxy[:, [1, 3]] *= height
+        
+        new = np.zeros((n, 4))
+
+        xy = np.ones((n * 4, 3))
+        xy[:, :2] = bboxes_xyxy[:, [0, 1, 2, 3, 0, 3, 2, 1]].reshape(n * 4, 2)  # x1y1, x2y2, x1y2, x2y1
+        xy = xy @ M.T  # transform
+        xy = (xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2]).reshape(n, 8)  # perspective rescale or affine
+
+        # create new boxes
+        x = xy[:, [0, 2, 4, 6]]
+        y = xy[:, [1, 3, 5, 7]]
+        new = np.concatenate((x.min(1), y.min(1), x.max(1), y.max(1))).reshape(4, n).T
+
+        # clip
+        new[:, [0, 2]] = new[:, [0, 2]].clip(0, width)
+        new[:, [1, 3]] = new[:, [1, 3]].clip(0, height)
+
+        # filter candidates
+        i = yolov5_box_candidates(box1=bboxes_xyxy.T * s, box2=new.T, area_thr=0.10)
+        
+        new = new[i]
+        
+        new[:, [0, 2]] /= width
+        new[:, [1, 3]] /= height
+        
+        bboxes_cxcywh = xyxy2cxcywh(new)
+        bboxes_class = bboxes_class[i]
+
+    assert len(bboxes_cxcywh) == len(bboxes_class)
+    
+    if len(org_bboxes_cxcywh) != 0 and len(bboxes_cxcywh) == 0:
+        return org_img, org_bboxes_cxcywh, org_bboxes_class
+    else:
+        return img, bboxes_cxcywh, bboxes_class
+
+def yolov5_box_candidates(box1, box2, wh_thr=2, ar_thr=100, area_thr=0.1, eps=1e-16):  # box1(4,n), box2(4,n)
+    # Compute candidate boxes: box1 before augment, box2 after augment, wh_thr (pixels), aspect_ratio_thr, area_ratio
+    w1, h1 = box1[2] - box1[0], box1[3] - box1[1]
+    w2, h2 = box2[2] - box2[0], box2[3] - box2[1]
+    ar = np.maximum(w2 / (h2 + eps), h2 / (w2 + eps))  # aspect ratio
+    return (w2 > wh_thr) & (h2 > wh_thr) & (w2 * h2 / (w1 * h1 + eps) > area_thr) & (ar < ar_thr)  # candidates
+
 def draw_bboxes(img, bboxes_cxcywh):
     img_h, img_w = img.shape[:2]
     bboxes_xyxy = cxcywh2xyxy(bboxes_cxcywh)
