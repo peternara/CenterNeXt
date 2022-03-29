@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import torch
 import random
+import math
 
 
 def cxcywh2xyxy(bboxes_cxcywh: np.ndarray):
