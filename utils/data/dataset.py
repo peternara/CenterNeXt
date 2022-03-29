@@ -64,8 +64,9 @@ class DetectionDataset(Dataset):  # for training/testing
                 img, bboxes_cxcywh, bboxes_class = transforms.mixup(img, bboxes_cxcywh, bboxes_class, self.dataset, self.keep_ratio, use_mosaic=self.use_mosaic, p=0.5, mosaic_p=0.5)
     
             img, bboxes_cxcywh = transforms.horizontal_flip(img, bboxes_cxcywh, p=0.5)
-            img, bboxes_cxcywh = transforms.random_translation(img, bboxes_cxcywh, p=1.0)
-            img, bboxes_cxcywh = transforms.random_scale(img, bboxes_cxcywh, p=1.0)
+            # img, bboxes_cxcywh = transforms.random_translation(img, bboxes_cxcywh, p=1.0)
+            # img, bboxes_cxcywh = transforms.random_scale(img, bboxes_cxcywh, p=1.0)
+            img, bboxes_cxcywh, bboxes_class = transforms.yolov5_random_perspective(img, bboxes_cxcywh, bboxes_class, translate=.1, scale=.5, degrees=0, shear=0)
             img = transforms.augment_hsv(img)
 
         #numpy(=opencv)img 2 pytorch tensor        
