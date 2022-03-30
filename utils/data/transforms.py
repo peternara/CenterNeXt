@@ -412,15 +412,24 @@ def scatter_gaussian_kernel(heatmap, bbox_icx, bbox_icy, bbox_w, bbox_h, alpha=0
     heatmap_h, heatmap_w = heatmap.shape
     dtype = heatmap.dtype
     
-    std_w = alpha * bbox_w/6.
-    std_h = alpha * bbox_h/6.
+    h_radius_alpha = (bbox_h / 2.) * alpha
+    w_radius_alpha = (bbox_w / 2.) * alpha
     
-    var_w = std_w ** 2
-    var_h = std_h ** 2
+    h, w = 2 * h_radius_alpha + 1, 2 * w_radius_alpha + 1
+    
+    sigma_x = w / 6
+    sigma_y = h / 6
 
     grid_x, grid_y = np.meshgrid(np.arange(heatmap_w, dtype=dtype), np.arange(heatmap_h, dtype=dtype))
 
-    gaussian_kernel = np.exp(-((grid_x - bbox_icx)**2/(2. * var_w))-((grid_y - bbox_icy)**2/(2. * var_h)))
+    gaussian_kernel = np.exp(-((grid_x - bbox_icx)**2/(2. * sigma_x * sigma_x))-((grid_y - bbox_icy)**2/(2. * sigma_y * sigma_y)))
     gaussian_kernel[bbox_icy, bbox_icx] = 1.
-    heatmap = np.maximum(heatmap, gaussian_kernel)
+    
+    xmin = np.clip(round(bbox_icx - w_radius_alpha), 0, heatmap_w)
+    ymin = np.clip(round(bbox_icy - h_radius_alpha), 0, heatmap_h)
+    
+    xmax = np.clip(round(bbox_icx + w_radius_alpha), 0, heatmap_w)
+    ymax = np.clip(round(bbox_icy + h_radius_alpha), 0, heatmap_h)
+    
+    heatmap[ymin:ymax, xmin:xmax] = np.maximum(heatmap[ymin:ymax, xmin:xmax], gaussian_kernel[ymin:ymax, xmin:xmax])
     return heatmap
